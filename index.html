@@ -3,1122 +3,433 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hospital Management System - Admin Preview</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>STAVYA DHOS 2.0 - Spine Specialty Command Center</title>
     <style>
-        :root {
-            --primary: #2563eb;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --dark: #1f2937;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #0a1a2f; 
+            color: #e0e7ff; 
+            height: 100vh; 
+            overflow: hidden;
         }
-        .glass {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        .container { 
+            display: grid; 
+            grid-template-columns: 1fr 2fr 1fr; 
+            gap: 1.5rem; 
+            height: 100%; 
+            padding: 1.5rem; 
         }
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 6px;
-            animation: pulse 2s infinite;
+        .panel { 
+            background: rgba(10, 26, 47, 0.7); 
+            border-radius: 12px; 
+            padding: 1.5rem; 
+            height: 100%; 
+            overflow-y: auto;
         }
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
+        .panel h2 { 
+            color: #4cc9f0; 
+            margin-bottom: 1rem; 
+            font-size: 1.4rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem;
         }
-        .status-online { background: var(--success); }
-        .status-warning { background: var(--warning); }
-        .status-offline { background: var(--danger); }
-        .hover-lift:hover {
-            transform: translateY(-2px);
-            transition: transform 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        .kpi-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+            gap: 1rem; 
         }
-        .tab-active {
-            border-bottom: 3px solid var(--primary);
-            color: var(--primary);
-            font-weight: 600;
+        .kpi-card { 
+            background: rgba(15, 23, 42, 0.6); 
+            border-radius: 10px; 
+            padding: 1.2rem; 
+            text-align: center; 
+            border-left: 4px solid;
         }
-        .settings-modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 50;
-        }
-        .settings-modal.active {
-            display: flex;
-            align-items: center;
+        .kpi-card h3 { 
+            font-size: 0.9rem; 
+            opacity: 0.7; 
+            margin-bottom: 0.5rem; 
+            height: 2.2rem; 
+            display: flex; 
+            align-items: center; 
             justify-content: center;
         }
-        .settings-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            width: 90%;
-            max-width: 400px;
-            position: relative;
+        .kpi-card .value { 
+            font-size: 1.8rem; 
+            font-weight: bold; 
+            min-height: 2.4rem; 
         }
-        .settings-content h2 {
-            margin-top: 0;
+        .kpi-card .change { 
+            font-size: 0.85rem; 
+            margin-top: 0.3rem; 
         }
-        .close-btn {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
+        .positive { color: #10b981; border-left-color: #10b981; }
+        .negative { color: #ef4444; border-left-color: #ef4444; }
+        .neutral { color: #f59e0b; border-left-color: #f59e0b; }
+        .info { color: #60a5fa; border-left-color: #60a5fa; }
+        
+        .floor-map { 
+            position: relative; 
+            height: 100%; 
+            background: rgba(15, 23, 42, 0.4); 
+            border-radius: 10px; 
+            overflow: hidden;
         }
-        .input-group {
-            margin-bottom: 1.5rem;
+        .map-container { 
+            position: relative; 
+            width: 100%; 
+            height: 100%; 
         }
-        .input-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
+        .map-bg { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="100%" height="100%" fill="%230f172a"/><path d="M0,50 L200,50 M50,0 L50,200 M100,0 L100,200 M150,0 L150,200" stroke="%231e293b" stroke-width="0.5"/></svg>');
+            opacity: 0.3;
         }
-        .input-group input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            font-size: 1rem;
+        .floor-label { 
+            position: absolute; 
+            background: rgba(0,0,0,0.6); 
+            color: white; 
+            padding: 0.3rem 0.6rem; 
+            border-radius: 4px; 
+            font-size: 0.8rem; 
+            z-index: 10;
         }
-        .input-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+        .zone { 
+            position: absolute; 
+            border: 2px solid; 
+            border-radius: 6px; 
+            padding: 0.4rem; 
+            font-size: 0.75rem; 
+            text-align: center; 
+            z-index: 5;
         }
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            cursor: pointer;
+        .zone.active { 
+            animation: pulse 2s infinite; 
+        }
+        @keyframes pulse { 
+            0% { box-shadow: 0 0 0 0 rgba(76, 201, 240, 0.4); } 
+            70% { box-shadow: 0 0 0 10px rgba(76, 201, 240, 0); } 
+            100% { box-shadow: 0 0 0 0 rgba(76, 201, 240, 0); } 
+        }
+        
+        /* Spine-Specific Zones */
+        .ot-zone { background: rgba(255, 101, 101, 0.15); border-color: #ff6565; color: #ff6565; }
+        .icu-zone { background: rgba(255, 171, 101, 0.15); border-color: #ffab65; color: #ffab65; }
+        .radiology-zone { background: rgba(101, 188, 255, 0.15); border-color: #65bcff; color: #65bcff; }
+        .physio-zone { background: rgba(101, 255, 158, 0.15); border-color: #65ff9e; color: #65ff9e; }
+        
+        .admin-panel { 
+            background: rgba(15, 23, 42, 0.6); 
+            border-radius: 10px; 
+            padding: 1.2rem; 
+        }
+        .admin-btn { 
+            display: block; 
+            width: 100%; 
+            padding: 0.8rem; 
+            margin: 0.6rem 0; 
+            background: rgba(30, 41, 59, 0.6); 
+            border: none; 
+            border-radius: 6px; 
+            color: #e0e7ff; 
+            cursor: pointer; 
+            font-size: 0.9rem; 
             transition: background 0.2s;
         }
-        .btn-primary:hover {
-            background: #1d4ed8;
+        .admin-btn:hover { 
+            background: rgba(30, 41, 59, 0.8); 
         }
-        .btn-secondary {
-            background: #e5e7eb;
-            color: var(--dark);
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            cursor: pointer;
+        .admin-btn.active { 
+            background: #4cc9f0; 
+            color: white; 
         }
-        .btn-secondary:hover {
-            background: #d1d5db;
+        
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 1.5rem; 
+            padding-bottom: 0.8rem; 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .hospital-name { 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+            color: #4cc9f0; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem;
+        }
+        .clock { 
+            font-family: 'Courier New', monospace; 
+            font-size: 1.1rem; 
+        }
+        
+        .legend { 
+            margin-top: 1.5rem; 
+            font-size: 0.85rem; 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 0.8rem;
+        }
+        .legend-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.3rem;
+        }
+        .legend-color { 
+            width: 12px; 
+            height: 12px; 
+            border-radius: 3px; 
+        }
+        
+        @media (max-width: 1024px) {
+            .container { 
+                grid-template-columns: 1fr; 
+                grid-template-rows: auto 1fr auto; 
+            }
+            .panel { 
+                height: auto; 
+                max-height: 30vh; 
+            }
+            .floor-map { 
+                height: 40vh; 
+            }
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
-    <!-- ========== LOGIN PAGE ========== -->
-    <div id="login-page" class="flex items-center justify-center min-h-screen bg-gray-50">
-        <div class="glass w-full max-w-md p-8 space-y-6">
-            <div class="text-center">
-                <div class="h-16 w-16 flex items-center justify-center bg-indigo-600 text-white rounded-lg">
-                    <i class="material-icons text-3xl">local_hospital</i>
+<body>
+    <div class="container">
+        <!-- LEFT PANEL: LIVE KPIs -->
+        <div class="panel">
+            <div class="header">
+                <div class="hospital-name">STAVYA DHOS 2.0</div>
+                <div class="clock" id="clock">--:--:--</div>
+            </div>
+            <h2>LIVE KPI DASHBOARD</h2>
+            <div class="kpi-grid">
+                <!-- Spine-Specific KPIs -->
+                <div class="kpi-card positive">
+                    <h3>OT Utilization</h3>
+                    <div class="value" id="ot-util">78%</div>
+                    <div class="change">↑ 5% vs target</div>
                 </div>
-                <h2 class="text-xl font-semibold text-gray-900">Hospital Management System</h2>
-                <p class="text-sm text-gray-500">Secure Access for Medical Staff</p>
+                <div class="kpi-card info">
+                    <h3>Spine Surgeries Today</h3>
+                    <div class="value" id="spine-surgeries">3</div>
+                    <div class="change">2 TLIF, 1 ACDF</div>
+                </div>
+                <div class="kpi-card neutral">
+                    <h3>Avg. Surgery Duration</h3>
+                    <div class="value" id="avg-duration">2h 18m</div>
+                    <div class="change">Target: 2h</div>
+                </div>
+                <div class="kpi-card positive">
+                    <h3>Implant Accuracy</h3>
+                    <div class="value" id="implant-acc">98.7%</div>
+                    <div class="change">O-Arm Nav</div>
+                </div>
+                <div class="kpi-card info">
+                    <h3>DEXA Scans</h3>
+                    <div class="value" id="dexa-scans">12</div>
+                    <div class="change">Today</div>
+                </div>
+                <div class="kpi-card negative">
+                    <h3>OR Turnover Time</h3>
+                    <div class="value" id="turnover">22m</div>
+                    <div class="change">↓ 8m vs yesterday</div>
+                </div>
+                <div class="kpi-card info">
+                    <h3>ICU Occupancy</h3>
+                    <div class="value" id="icu-occ">65%</div>
+                    <div class="change">4/6 beds</div>
+                </div>
+                <div class="kpi-card positive">
+                    <h3>Patient Satisfaction</h3>
+                    <div class="value" id="sat-score">4.8/5</div>
+                    <div class="change">↑ 0.3 vs week</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER: INTERACTIVE FLOOR MAP -->
+        <div class="panel">
+            <div class="header">
+                <div class="hospital-name">LIVE FLOOR MAP</div>
+            </div>
+            <h2>Spine Specialty Hospital Layout</h2>
+            <div class="floor-map">
+                <div class="map-container">
+                    <div class="map-bg"></div>
+                    <!-- Floor Labels -->
+                    <div class="floor-label" style="top: 2%; left: 2%;">GROUND</div>
+                    <div class="floor-label" style="top: 18%; left: 2%;">1ST FLOOR</div>
+                    <div class="floor-label" style="top: 34%; left: 2%;">2ND FLOOR</div>
+                    <div class="floor-label" style="top: 50%; left: 2%;">3RD FLOOR (OT)</div>
+                    <div class="floor-label" style="top: 66%; left: 2%;">4TH FLOOR (ICU/WARDS)</div>
+                    <div class="floor-label" style="top: 82%; left: 2%;">5TH FLOOR (PRIVATE)</div>
+                    
+                    <!-- Spine-Specific Zones -->
+                    <div class="zone ot-zone active" style="top: 48%; left: 25%; width: 18%; height: 12%;">
+                        OT COMPLEX<br><span id="ot-status">OT3: TLIF (Running)</span>
+                    </div>
+                    <div class="zone icu-zone" style="top: 64%; left: 30%; width: 12%; height: 10%;">
+                        ICU<br><span id="icu-status">4/6 Occupied</span>
+                    </div>
+                    <div class="zone radiology-zone" style="top: 16%; left: 25%; width: 15%; height: 12%;">
+                        RADIOLOGY<br><span id="radio-status">MRI: Scanning</span>
+                    </div>
+                    <div class="zone physio-zone" style="top: 80%; left: 20%; width: 14%; height: 10%;">
+                        PHYSIO<br><span id="physio-status">8 Patients</span>
+                    </div>
+                    <div class="zone info" style="top: 10%; left: 40%; width: 10%; height: 8%;">
+                        EMERGENCY<br><span id="er-status">2 Waiting</span>
+                    </div>
+                    <div class="zone info" style="top: 10%; left: 60%; width: 10%; height: 8%;">
+                        PHARMACY<br><span id="pharm-status">Open</span>
+                    </div>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color ot-zone"></div>
+                        <span>OT Complex</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color icu-zone"></div>
+                        <span>ICU</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color radiology-zone"></div>
+                        <span>Radiology</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color physio-zone"></div>
+                        <span>Physiotherapy</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color info"></div>
+                        <span>Support Services</span>
+                    </div>
+                    <div class="legend-item active">
+                        <div class="legend-color" style="background: #ff6565; animation: pulse 2s infinite;"></div>
+                        <span>Active Zone</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: ADMIN & ALERTS -->
+        <div class="panel">
+            <div class="header">
+                <div class="hospital-name">ADMIN CONTROLS</div>
+            </div>
+            <h2>System Management</h2>
+            <div class="admin-panel">
+                <button class="admin-btn active" onclick="toggleView('ot')">OT Command Center</button>
+                <button class="admin-btn" onclick="toggleView('patient')">Patient Journey</button>
+                <button class="admin-btn" onclick="toggleView('inventory')">Spine Implants</button>
+                <button class="admin-btn" onclick="toggleView('ai')">AI Predictions</button>
+                <button class="admin-btn" onclick="toggleView('alerts')">Active Alerts</button>
             </div>
             
-            <form id="login-form" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                    <input type="text" id="username" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter username" required>
+            <div id="alerts-panel" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                <h3>ACTIVE ALERTS</h3>
+                <div style="background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; padding: 0.8rem; margin: 0.5rem 0; border-radius: 0 4px 4px 0;">
+                    <strong>⚠ OT2 Delay</strong> - Neuro-monitoring alert pending (MEP baseline shift)
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="password" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter password" required>
+                <div style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; padding: 0.8rem; margin: 0.5rem 0; border-radius: 0 4px 4px 0;">
+                    <strong>⚠ Implant Low Stock</strong> - PEEK Cages (Size 12mm) - 3 kits remaining
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-                    Sign In
-                </button>
-                <p class="text-xs text-gray-500 text-center">
-                    Demo Credentials:<br>
-                    Username: <code>admin</code><br>
-                    Password: <code>admin123</code>
-                </p>
-            </form>
-            
-            <div id="otp-section" class="hidden space-y-4">
-                <div class="text-center">
-                    <h3 class="text-lg font-semibold text-gray-900">Two-Factor Authentication</h3>
-                    <p class="text-sm text-gray-500">An OTP has been sent to your registered email</p>
+                <div style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; padding: 0.8rem; margin: 0.5rem 0; border-radius: 0 4px 4px 0;">
+                    <strong>✓ Fusion Success</strong> - Patient #SP-2024-089 (96% probability)
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Enter OTP Code</label>
-                    <input type="text" id="otp-input" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="6-digit code" maxlength="6" required>
-                </div>
-                <button type="button" id="verify-otp-btn" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-                    Verify OTP
-                </button>
-                <p class="text-xs text-gray-500 text-center">
-                    Demo OTP: <code>123456</code>
-                </p>
             </div>
-            
-            <div id="login-error" class="hidden text-sm text-red-600 text-center"></div>
         </div>
     </div>
 
-    <!-- ========== MAIN APPLICATION (SHOWN AFTER LOGIN) ========== -->
-    <div id="main-app" class="hidden flex-1 overflow-y-auto">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <!-- Hospital Logo -->
-                    <div class="h-10 w-10 flex-shrink-0">
-                        <img src="https://via.placeholder.com/150x50/2563eb/ffffff?text=Hospital+Logo" 
-                             alt="Hospital Logo" 
-                             class="h-full w-full object-contain"
-                             id="hospital-logo">
-                    </div>
-                    <div>
-                        <h1 class="text-xl font-semibold text-gray-900" id="hospital-name">Your Hospital Name</h1>
-                        <p class="text-sm text-gray-500" id="hospital-tagline">Advanced Medical Management System</p>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <!-- Settings Button (Admin Only) -->
-                    <button id="settings-btn" class="relative flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover-lift hidden">
-                        <span class="mr-2">Settings</span>
-                        <i class="material-icons">settings</i>
-                    </button>
-                    
-                    <div class="relative">
-                        <div class="absolute inset-0 animate-pulse bg-indigo-600 opacity-25 rounded-full"></div>
-                        <button id="logout-btn" class="relative flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover-lift">
-                            <span class="mr-2">Logout</span>
-                            <i class="material-icons">logout</i>
-                        </button>
-                    </div>
-                    <div class="status-badge status-online flex items-center">
-                        <div class="status-dot status-online"></div>
-                        <span>System Online • Last sync: <span id="last-sync">just now</span></span>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="flex-1 overflow-y-auto">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                <!-- Role Selector (Simulates RBAC) -->
-                <div class="mb-6">
-                    <div class="flex items-center space-x-4 bg-white p-4 rounded-lg shadow-sm hover-lift">
-                        <div class="flex-shrink-0">
-                            <div class="h-10 w-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg">
-                                <i class="material-icons">account_circle</i>
-                            </div>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">Current Role:</p>
-                            <p class="text-lg font-semibold text-gray-900" id="current-role">Admin (System Administrator)</p>
-                        </div>
-                        <div class="ml-auto flex space-x-3">
-                            <button class="px-3 py-1 text-xs font-medium bg-gray-100 rounded-full hover:bg-gray-200" id="role-admin">Admin</button>
-                            <button class="px-3 py-1 text-xs font-medium bg-gray-100 rounded-full hover:bg-gray-200" id="role-doctor">Doctor</button>
-                            <button class="px-3 py-1 text-xs font-medium bg-gray-100 rounded-full hover:bg-gray-200" id="role-nurse">Nurse</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tabbed Interface -->
-                <div class="mb-6">
-                    <div class="flex border-b border-gray-200">
-                        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover-lift tab-active" id="tab-dashboard">Dashboard</button>
-                        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover-lift" id="tab-opd">OPD</button>
-                        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover-lift" id="tab-ipd">IPD</button>
-                        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover-lift" id="tab-pharmacy">Pharmacy</button>
-                        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover-lift" id="tab-billing">Billing</button>
-                        <!-- Admin-only tabs -->
-                        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover-lift" id="tab-settings">Settings</button>
-                        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover-lift" id="tab-reports">Reports</button>
-                    </div>
-                </div>
-
-                <!-- Tab Content -->
-                <div id="tab-content" class="space-y-6">
-                    <!-- Dashboard Tab -->
-                    <div id="dashboard-tab" class="tab-pane active">
-                        <!-- Live Stats -->
-                        <div class="grid gap-4 mb-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-                            <div class="glass p-4 rounded-lg hover-lift">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="h-8 w-8 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg">
-                                            <i class="material-icons">hospital</i>
-                                        </div>
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-xs font-medium text-gray-500">Active Patients</p>
-                                        <p class="mt-1 text-2xl font-bold text-gray-900" id="patient-count">142</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="glass p-4 rounded-lg hover-lift">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="h-8 w-8 flex items-center justify-center bg-green-100 text-green-600 rounded-lg">
-                                            <i class="material-icons">local_hospital</i>
-                                        </div>
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-xs font-medium text-gray-500">Today's Admissions</p>
-                                        <p class="mt-1 text-2xl font-bold text-gray-900" id="today-admissions">22</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="glass p-4 rounded-lg hover-lift">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="h-8 w-8 flex items-center justify-center bg-purple-100 text-purple-600 rounded-lg">
-                                            <i class="material-icons">schedule</i>
-                                        </div>
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-xs font-medium text-gray-500">OR Utilization</p>
-                                        <p class="mt-1 text-2xl font-bold text-gray-900" id="or-utilization">85%</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="glass p-4 rounded-lg hover-lift">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="h-8 w-8 flex items-center justify-center bg-amber-100 text-amber-600 rounded-lg">
-                                            <i class="material-icons">attach_money</i>
-                                        </div>
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-xs font-medium text-gray-500">Daily Revenue</p>
-                                        <p class="mt-1 text-2xl font-bold text-gray-900" id="daily-revenue">$18,750</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Patient Queue -->
-                        <section class="glass rounded-lg shadow-sm p-4">
-                            <div class="flex justify-between items-start mb-3">
-                                <h2 class="text-xl font-semibold text-gray-900">Patient Queue</h2>
-                                <div class="flex items-center space-x-2">
-                                    <div class="h-2 w-2 bg-green-500 rounded-full status-dot status-online"></div>
-                                    <span class="text-xs text-gray-500">Live Updates</span>
-                                </div>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dept</th>
-                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th scope="col" class="relative px-3 py-2">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200" id="patient-queue">
-                                        <!-- Will be populated by JS -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </section>
-
-                        <!-- Recent Activity -->
-                        <section class="grid gap-4 mb-6 grid-cols-1 lg:grid-cols-2">
-                            <!-- Lab Results -->
-                            <section class="glass rounded-lg shadow-sm p-4">
-                                <div class="flex justify-between items-start mb-3">
-                                    <h2 class="text-xl font-semibold text-gray-900">Recent Lab Results</h2>
-                                    <button class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">View All</button>
-                                </div>
-                                <div class="space-y-3" id="lab-results">
-                                    <!-- Populated by JS -->
-                                </div>
-                            </section>
-
-                            <!-- System Alerts -->
-                            <section class="glass rounded-lg shadow-sm p-4">
-                                <div class="flex justify-between items-start mb-3">
-                                    <h2 class="text-xl font-semibold text-gray-900">System Alerts</h2>
-                                    <button class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">View All</button>
-                                </div>
-                                <div class="space-y-3" id="system-alerts">
-                                    <!-- Populated by JS -->
-                                </div>
-                            </section>
-                        </div>
-                    </div>
-
-                    <!-- OPD Tab -->
-                    <div id="opd-tab" class="tab-pane hidden">
-                        <section class="glass rounded-lg shadow-sm p-4">
-                            <h2 class="text-xl font-semibold text-gray-900 mb-4">OPD Schedule</h2>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
-                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dept</th>
-                                            <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200" id="opd-schedule">
-                                        <!-- Populated by JS -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </section>
-                    </div>
-
-                    <!-- Pharmacy Tab -->
-                    <div id="pharmacy-tab" class="tab-pane hidden">
-                        <section class="glass rounded-lg shadow-sm p-4 mb-4">
-                            <h2 class="text-xl font-semibold text-gray-900 mb-4">Medication Dispensing</h2>
-                            <div class="space-y-4">
-                                <div class="flex items-start space-x-4">
-                                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-green-100 text-green-600 rounded-lg">
-                                        <i class="material-icons">local_pharmacy</i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-sm font-medium text-gray-900">Dispensed: Amoxicillin 500mg</h3>
-                                        <p class="mt-1 text-sm text-gray-500">Patient: John Smith (PAT-2024-001)</p>
-                                        <p class="mt-1 text-sm font-medium">Qty: 10 capsules • RX: RX-2024-089</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-start space-x-4">
-                                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-yellow-100 text-yellow-600 rounded-lg">
-                                        <i class="material-icons">warning</i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-sm font-medium text-gray-900">Alert: Low Stock</h3>
-                                        <p class="mt-1 text-sm text-gray-500">Item: Insulin Aspart (100U/mL)</p>
-                                        <p class="mt-1 text-sm font-medium text-red-600">Stock: 5 vials (Min: 10)</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
-
-                    <!-- Billing Tab -->
-                    <div id="billing-tab" class="tab-pane hidden">
-                        <section class="glass rounded-lg shadow-sm p-4">
-                            <h2 class="text-xl font-semibold text-gray-900 mb-4">Today's Billing Summary</h2>
-                            <div class="grid gap-4 grid-cols-1 md:grid-cols-2">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">Total Claims Processed</p>
-                                    <p class="text-2xl font-bold text-gray-900">47</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">Average Claim Value</p>
-                                    <p class="text-2xl font-bold text-gray-900">$320</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">Insurance Approval Rate</p>
-                                    <p class="text-2xl font-bold text-gray-900">92%</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">Pending Payments</p>
-                                    <p class="text-2xl font-bold text-gray-900">$8,450</p>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
-
-                    <!-- IPD Tab -->
-                    <div id="ipd-tab" class="tab-pane hidden">
-                        <section class="glass rounded-lg shadow-sm p-4">
-                            <h2 class="text-xl font-semibold text-gray-900 mb-4">Inpatient Status</h2>
-                            <div class="space-y-4">
-                                <div class="flex items-start space-x-4">
-                                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-red-100 text-red-600 rounded-lg">
-                                        <i class="material-icons">local_hospital</i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-sm font-medium text-gray-900">Bed Occupancy</h3>
-                                        <p class="mt-1 text-sm text-gray-500">78/100 beds occupied (78%)</p>
-                                        <p class="mt-1 text-sm font-medium text-green-600">22 beds available</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-start space-x-4">
-                                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg">
-                                        <i class="material-icons">bed</i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-sm font-medium text-gray-900">ICU Status</h3>
-                                        <p class="mt-1 text-sm text-gray-500">12/20 ICU beds occupied (60%)</p>
-                                        <p class="mt-1 text-sm font-medium text-green-600">8 ICU beds available</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
-
-                    <!-- Reports Tab (Admin Only) -->
-                    <div id="reports-tab" class="tab-pane hidden">
-                        <section class="glass rounded-lg shadow-sm p-4">
-                            <h2 class="text-xl font-semibold text-gray-900 mb-4">System Reports</h2>
-                            <div class="space-y-4">
-                                <div class="flex items-start space-x-4">
-                                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-indigo-100 text-indigo-600 rounded-lg">
-                                        <i class="material-icons">assignment</i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-sm font-medium text-gray-900">Monthly Performance</h3>
-                                        <p class="mt-1 text-sm text-gray-500">Revenue Growth: +15% YoY</p>
-                                        <p class="mt-1 text-sm font-medium text-green-600">Patient Satisfaction: 4.8/5</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-start space-x-4">
-                                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-purple-100 text-purple-600 rounded-lg">
-                                        <i class="material-icons">bar_chart</i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-sm font-medium text-gray-900">Resource Utilization</h3115.5</h3>
-                                        <p class="mt-1 text-sm text-gray-500">Equipment Uptime: 98.2%</p>
-                                        <p class="mt-1 text-sm font-medium text-blue-600">Staff Efficiency: 91.7%</p>
-                                    </div>
-                                </div>
-                                <button class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                    Generate Full Report (PDF)
-                                </button>
-                            </div>
-                        </section>
-                    </div>
-
-                    <!-- Settings Tab (Admin Only) -->
-                    <div id="settings-tab" class="tab-pane hidden">
-                        <section class="glass rounded-lg shadow-sm p-4">
-                            <h2 class="text-xl font-semibold text-gray-900 mb-4">System Settings</h2>
-                            <div class="space-y-6">
-                                <div class="grid gap-4 grid-cols-1 md:grid-cols-2">
-                                    <div>
-                                        <h3 class="text-lg font-semibold text-gray-900">Hospital Information</h3>
-                                        <div class="space-y-3">
-                                            <label class="block text-sm font-medium text-gray-700">Hospital Name</label>
-                                            <input type="text" id="hospital-name-input" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus-ring-indigo-500" value="Your Hospital Name">
-                                        </div>
-                                        <div class="space-y-3">
-                                            <label class="block text-sm font-medium text-gray-700">Tagline</label>
-                                            <input type="text" id="tagline-input" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus-ring-indigo-500" value="Advanced Medical Management System">
-                                        </div>
-                                        <div class="space-y-3">
-                                            <label class="block text-sm font-medium text-gray-700">Logo URL</label>
-                                            <input type="text" id="logo-url-input" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus-ring-indigo-500" value="https://via.placeholder.com/150x50/2563eb/ffffff?text=Hospital+Logo">
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-lg font-semibold text-gray-900">System Preferences</h3>
-                                        <div class="space-y-3">
-                                            <label class="flex items-start space-x-2">
-                                                <input type="checkbox" id="enable-notifications" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                                <span class="ml-2 text-sm font-medium text-gray-700">Enable Real-time Notifications</span>
-                                            </label>
-                                        </div>
-                                        <div class="space-y-3">
-                                            <label class="flex items-start space-x-2">
-                                                <input type="checkbox" id="auto-backup" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
-                                                <span class="ml-2 text-sm font-medium text-gray-700">Automatic Daily Backup</span>
-                                            </label>
-                                        </div>
-                                        <div class="space-y-3">
-                                            <label class="flex items-start space-x-2">
-                                                <input type="checkbox" id="two-factor" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
-                                                <span class="ml-2 text-sm font-medium text-gray-700">Require Two-Factor Authentication</span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex justify-end space-x-3">
-                                    <button id="save-settings-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                        Save Settings
-                                    </button>
-                                    <button id="cancel-settings-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus-ring-offset-2 focus:ring-gray-500">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Settings Modal (for quick hospital name/logo changes) -->
-        <div id="settings-modal" class="settings-modal">
-            <div class="settings-content">
-                <button class="close-btn" id="close-settings-modal">&times;</button>
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Hospital Settings</h2>
-                <div class="space-y-4">
-                    <div class="input-group">
-                        <label for="modal-hospital-name">Hospital Name</label>
-                        <input type="text" id="modal-hospital-name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div class="input-group">
-                        <label for="modal-tagline">Tagline</label>
-                        <input type="text" id="modal-tagline" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div class="input-group">
-                        <label for="modal-logo-url">Logo URL</label>
-                        <input type="text" id="modal-logo-url" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                </div>
-                <div class="flex justify-end space-x-3">
-                    <button id="modal-save-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Save
-                    </button>
-                    <button id="modal-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus-ring-offset-2 focus:ring-gray-500">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 py-4">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
-            <span id="hospital-name-footer">Your Hospital Name</span> • <span id="footer-time">Loading...</span> • Simulated Data for Preview
-        </div>
-    </footer>
-
     <script>
-        // ========== STATE MANAGEMENT ==========
-        let currentRole = 'Admin';
-        let hospitalName = "Your Hospital Name";
-        let hospitalTagline = "Advanced Medical Management System";
-        let hospitalLogoUrl = "https://via.placeholder.com/150x50/2563eb/ffffff?text=Hospital+Logo";
-        
-        // Sample data pools (same as before but expanded)
-        const patients = [
-            { id: 'PAT-2024-001', name: 'John Smith', age: 45, dept: 'Cardiology', status: 'In Consultation', statusClass: 'bg-green-100 text-green-800' },
-            { id: 'PAT-2024-002', name: 'Maria Garcia', age: 32, dept: 'Emergency', status: 'Critical', statusClass: 'bg-red-100 text-red-800' },
-            { id: 'PAT-2024-003', name: 'Robert Chen', age: 67, dept: 'Orthopedics', status: 'Waiting', statusClass: 'bg-yellow-100 text-yellow-800' },
-            { id: 'PAT-2024-004', name: 'Lisa Wang', age: 28, dept: 'Pediatrics', status: 'In Consultation', statusClass: 'bg-green-100 text-green-800' },
-            { id: 'PAT-2024-005', name: 'James Wilson', age: 55, dept: 'Oncology', status: 'Pre-Op', statusClass: 'bg-blue-100 text-blue-800' },
-            { id: 'PAT-2024-006', name: 'Sarah Khan', age: 41, dept: 'Radiology', status: 'Scan Complete', statusClass: 'bg-indigo-100 text-indigo-800' },
-            { id: 'PAT-2024-007', name: 'David Lee', age: 39, dept: 'Physiotherapy', status: 'In Session', statusClass: 'bg-purple-100 text-purple-800' },
-            { id: 'PAT-2024-008', name: 'Emily Davis', age: 52, dept: 'Neurology', status: 'Post-Op', statusClass: 'bg-green-100 text-green-800' }
-        ];
-
-        const labResults = [
-            { test: 'Blood Glucose', patient: 'John Smith', result: '110 mg/dL ✓ Normal', time: '2 min ago' },
-            { test: 'Lipid Panel', patient: 'Maria Garcia', result: 'LDL: 160 mg/dL ⚠ High', time: '5 min ago' },
-            { test: 'CBC', patient: 'Robert Chen', result: 'WBC: 8.2 ◯ Normal', time: '8 min ago' },
-            { test: 'CRP', patient: 'Lisa Wang', result: '0.8 mg/L ✓ Normal', time: '12 min ago' }
-        ];
-
-        const alerts = [
-            { type: 'warning', msg: 'OR-3 Maintenance Required in 2h', time: '10 min ago' },
-            { type: 'info', msg: '3 New Patient Registrations', time: '15 min ago' },
-            { type: 'success', msg: 'Daily Backup Completed', time: '20 min ago' },
-            { type: 'warning', msg: 'Low Stock: Insulin Cartridges', time: '25 min ago' }
-        ];
-
-        const opdSchedule = [
-            { time: '09:00', patient: 'John Smith', doctor: 'Dr. Sharma', dept: 'Orthopedics', status: 'Checked In' },
-            { time: '09:30', patient: 'Maria Garcia', doctor: 'Dr. Patel', dept: 'Emergency', status: 'Waiting' },
-            { time: '10:00', patient: 'Robert Chen', doctor: 'Dr. Sharma', dept: 'Orthopedics', status: 'In Consultation' },
-            { time: '10:30', patient: 'Lisa Wang', doctor: 'Dr. Gupta', dept: 'Pediatrics', status: 'Checked In' },
-            { time: '11:00', patient: 'James Wilson', doctor: 'Dr. Sharma', dept: 'Oncology', status: 'Pre-Op Prep' }
-        ];
-
-        const ipdStatus = [
-            { label: 'Total Beds', value: '100', occupied: '78', unit: 'beds' },
-            { label: 'ICU Beds', value: '20', occupied: '12', unit: 'beds' },
-            { label: 'Operating Rooms', value: '5', occupied: '3', unit: 'rooms' }
-        ];
-
-        // ========== DOM ELEMENTS ==========
-        const elements = {
-            // Login elements
-            loginPage: document.getElementById('login-page'),
-            mainApp: document.getElementById('main-app'),
-            loginForm: document.getElementById('login-form'),
-            usernameInput: document.getElementById('username'),
-            passwordInput: document.getElementById('password'),
-            otpSection: document.getElementById('otp-section'),
-            otpInput: document.getElementById('otp-input'),
-            verifyOtpBtn: document.getElementById('verify-otp-btn'),
-            loginError: document.getElementById('login-error'),
-            
-            // Main app elements
-            hospitalNameDisplay: document.getElementById('hospital-name'),
-            hospitalTaglineDisplay: document.getElementById('hospital-tagline'),
-            hospitalLogoDisplay: document.getElementById('hospital-logo'),
-            hospitalNameFooter: document.getElementById('hospital-name-footer'),
-            patientCount: document.getElementById('patient-count'),
-            todayAdmissions: document.getElementById('today-admissions'),
-            orUtilization: document.getElementById('or-utilization'),
-            dailyRevenue: document.getElementById('daily-revenue'),
-            patientQueue: document.getElementById('patient-queue'),
-            labResults: document.getElementById('lab-results'),
-            systemAlerts: document.getElementById('system-alerts'),
-            opdSchedule: document.getElementById('opd-schedule'),
-            lastSync: document.getElementById('last-sync'),
-            currentRoleDisplay: document.getElementById('current-role'),
-            footerTime: document.getElementById('footer-time'),
-            
-            // Role buttons
-            roleButtons: {
-                admin: document.getElementById('role-admin'),
-                doctor: document.getElementById('role-doctor'),
-                nurse: document.getElementById('role-nurse')
-            },
-            
-            // Tab buttons
-            tabButtons: {
-                dashboard: document.getElementById('tab-dashboard'),
-                opd: document.getElementById('tab-opd'),
-                ipd: document.getElementById('tab-ipd'),
-                pharmacy: document.getElementById('tab-pharmacy'),
-                billing: document.getElementById('tab-billing'),
-                reports: document.getElementById('tab-reports'),
-                settings: document.getElementById('tab-settings')
-            },
-            
-            // Tab panes
-            tabPanes: {
-                dashboard: document.getElementById('dashboard-tab'),
-                opd: document.getElementById('opd-tab'),
-                ipd: document.getElementById('ipd-tab'),
-                pharmacy: document.getElementById('pharmacy-tab'),
-                billing: document.getElementById('billing-tab'),
-                reports: document.getElementById('reports-tab'),
-                settings: document.getElementById('settings-tab')
-            },
-            
-            // Settings elements
-            settingsBtn: document.getElementById('settings-btn'),
-            settingsModal: document.getElementById('settings-modal'),
-            closeSettingsModal: document.getElementById('close-settings-modal'),
-            modalHospitalName: document.getElementById('modal-hospital-name'),
-            modalTagline: document.getElementById('modal-tagline'),
-            modalLogoUrl: document.getElementById('modal-logo-url'),
-            modalSaveBtn: document.getElementById('modal-save-btn'),
-            modalCancelBtn: document.getElementById('modal-cancel-btn'),
-            hospitalNameInput: document.getElementById('hospital-name-input'),
-            taglineInput: document.getElementById('tagline-input'),
-            logoUrlInput: document.getElementById('logo-url-input'),
-            saveSettingsBtn: document.getElementById('save-settings-btn'),
-            cancelSettingsBtn: document.getElementById('cancel-settings-btn'),
-            
-            // Logout button
-            logoutBtn: document.getElementById('logout-btn')
-        };
-
-        // ========== INITIALIZATION ==========
-        function init() {
-            // Load saved settings if any
-            loadSettings();
-            updateHospitalBranding();
-            updateFooterTime();
-            setupEventListeners();
-        }
-
-        // ========== LOGIN FLOW ==========
-        function showLoginPage() {
-            elements.loginPage.classList.remove('hidden');
-            elements.mainApp.classList.add('hidden');
-        }
-
-        function showMainApp() {
-            elements.loginPage.classList.add('hidden');
-            elements.mainApp.classList.remove('hidden');
-            initApp();
-        }
-
-        function initApp() {
-            setRole('Admin'); // Default to Admin
-            setTab('dashboard');
-            updateAllData();
-            startLiveUpdates();
-        }
-
-        // ========== AUTHENTICATION (SIMULATED) ==========
-        function handleLogin() {
-            const username = elements.usernameInput.value.trim();
-            const password = elements.passwordInput.value;
-            
-            // Simple validation (in real app: Supabase auth)
-            if (username === 'admin' && password === 'admin123') {
-                elements.loginError.classList.add('hidden');
-                elements.loginForm.reset();
-                showOtpSection();
-            } else {
-                elements.loginError.textContent = 'Invalid credentials';
-                elements.loginError.classList.remove('hidden');
-            }
-        }
-
-        function showOtpSection() {
-            elements.loginForm.classList.add('hidden');
-            elements.otpSection.classList.remove('hidden');
-        }
-
-        function verifyOtp() {
-            const otp = elements.otpInput.value.trim();
-            if (otp === '123456') { // Demo OTP
-                elements.otpSection.classList.add('hidden');
-                showMainApp();
-            } else {
-                elements.loginError.textContent = 'Invalid OTP';
-                elements.loginError.classList.remove('hidden');
-                elements.otpInput.value = '';
-            }
-        }
-
-        // ========== SETTINGS MANAGEMENT ==========
-        function loadSettings() {
-            const savedName = localStorage.getItem('hospitalName');
-            const savedTagline = localStorage.getItem('hospitalTagline');
-            const savedLogo = localStorage.getItem('hospitalLogoUrl');
-            
-            if (savedName) hospitalName = savedName;
-            if (savedTagline) hospitalTagline = savedTagline;
-            if (savedLogo) hospitalLogoUrl = savedLogo;
-        }
-
-        function saveSettings() {
-            localStorage.setItem('hospitalName', hospitalName);
-            localStorage.setItem('hospitalTagline', hospitalTagline);
-            localStorage.setItem('hospitalLogoUrl', hospitalLogoUrl);
-        }
-
-        function updateHospitalBranding() {
-            elements.hospitalNameDisplay.textContent = hospitalName;
-            elements.hospitalTaglineDisplay.textContent = hospitalTagline;
-            elements.hospitalLogoDisplay.src = hospitalLogoUrl;
-            elements.hospitalNameFooter.textContent = hospitalName;
-            
-            // Update modal fields
-            elements.modalHospitalName.value = hospitalName;
-            elements.modalTagline.value = hospitalTagline;
-            elements.modalLogoUrl.value = hospitalLogoUrl;
-            
-            // Update settings tab fields
-            elements.hospitalNameInput.value = hospitalName;
-            elements.taglineInput.value = hospitalTagline;
-            elements.logoUrlInput.value = hospitalLogoUrl;
-        }
-
-        function openSettingsModal() {
-            elements.settingsModal.classList.add('active');
-        }
-
-        function closeSettingsModal() {
-            elements.settingsModal.classList.remove('active');
-        }
-
-        // ========== ROLE MANAGEMENT (RBAC) ==========
-        function setRole(role) {
-            currentRole = role;
-            elements.currentRoleDisplay.textContent = `${role} (${getRoleSpecialty(role)})`;
-            
-            // Update button states
-            Object.values(elements.roleButtons).forEach(btn => btn.classList.remove('bg-indigo-600', 'text-white'));
-            elements.roleButtons[role.toLowerCase()].classList.add('bg-indigo-600', 'text-white');
-            
-            // Show/hide tabs based on role
-            updateTabVisibility();
-        }
-
-        function getRoleSpecialty(role) {
-            const specialties = {
-                Admin: 'System Administrator',
-                Doctor: 'Attending Physician',
-                Nurse: 'Charge Nurse'
-            };
-            return specialties[role] || '';
-        }
-
-        function updateTabVisibility() {
-            // Hide certain tabs based on role
-            const isAdmin = currentRole === 'Admin';
-            const isDoctor = currentRole === 'Doctor';
-            const isNurse = currentRole === 'Nurse';
-            
-            // Admin-only tabs
-            elements.tabButtons.reports.parentElement.classList.toggle('hidden', !isAdmin);
-            elements.tabButtons.settings.parentElement.classList.toggle('hidden', !isAdmin);
-            elements.settingsBtn.classList.toggle('hidden', !isAdmin);
-            
-            // Doctor/Nurse restrictions
-            elements.tabButtons.pharmacy.parentElement.classList.toggle('hidden', isNurse);
-            elements.tabButtons.billing.parentElement.classList.toggle('hidden', isNurse);
-            
-            // If current tab is hidden, switch to dashboard
-            if (elements.tabButtons[currentTab].parentElement.classList.contains('hidden')) {
-                setTab('dashboard');
-            }
-        }
-
-        // ========== TAB MANAGEMENT ==========
-        let currentTab = 'dashboard';
-        
-        function setTab(tab) {
-            currentTab = tab;
-            
-            // Update button states
-            Object.values(elements.tabButtons).forEach(btn => btn.classList.remove('tab-active'));
-            elements.tabButtons[tab].classList.add('tab-active');
-            
-            // Show/hide panes
-            Object.values(elements.tabPanes).forEach(pane => pane.classList.add('hidden'));
-            elements.tabPanes[tab].classList.remove('hidden');
-        }
-
-        // ========== DATA UPDATES ==========
-        function updateAllData() {
-            updateStats();
-            updatePatientQueue();
-            updateLabResults();
-            updateSystemAlerts();
-            updateOpdSchedule();
-            updateIpdStatus();
-            updateLastSync();
-        }
-
-        function updateStats() {
-            // Simulate fluctuating data
-            elements.patientCount.textContent = Math.floor(Math.random() * 25) + 130;
-            elements.todayAdmissions.textContent = Math.floor(Math.random() * 12) + 18;
-            elements.orUtilization.textContent = Math.floor(Math.random() * 25) + 70 + '%';
-            elements.dailyRevenue.textContent = '$' + (Math.floor(Math.random() * 8000) + 12000).toLocaleString();
-        }
-
-        function updatePatientQueue() {
-            const shuffled = [...patients].sort(() => 0.5 - Math.random());
-            const sample = shuffled.slice(0, Math.floor(Math.random() * 4) + 3);
-            
-            elements.patientQueue.innerHTML = sample.map(p => `
-                <tr class="hover:bg-gray-50 transition-colors hover-lift">
-                    <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${p.id}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">${p.name}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">${p.age}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">${p.dept}</td>
-                    <td>
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${p.statusClass}">
-                            ${p.status}
-                        </span>
-                    </td>
-                    <td class="relative px-3 py-2">
-                        <button class="text-indigo-600 hover:text-indigo-900 px-2 py-1 rounded-md text-sm font-medium hover:bg-indigo-50 hover-lift">
-                            View
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function updateLabResults() {
-            elements.labResults.innerHTML = labResults.map(r => `
-                <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover-lift">
-                    <div class="flex-shrink-0 h-8 w-8 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg text-sm">
-                        <i class="material-icons">science</i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-medium text-gray-900">${r.test}</h3>
-                        <p class="mt-1 text-sm text-gray-500">Patient: ${r.patient}</p>
-                        <p class="mt-1 text-sm font-medium">${r.result}</p>
-                        <p class="mt-1 text-xs text-gray-500">${r.time}</p>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function updateSystemAlerts() {
-            elements.systemAlerts.innerHTML = alerts.map(a => {
-                const typeClass = {
-                    warning: 'bg-yellow-50 border-l-4 border-yellow-400',
-                    info: 'bg-blue-50 border-l-4 border-blue-400',
-                    success: 'bg-green-50 border-l-4 border-green-400'
-                }[a.type] || 'bg-gray-50';
-                
-                const iconClass = {
-                    warning: 'text-yellow-800',
-                    info: 'text-blue-800',
-                    success: 'text-green-800'
-                }[a.type] || 'text-gray-800';
-                
-                const icon = {
-                    warning: 'warning',
-                    info: 'notifications',
-                    success: 'check_circle'
-                }[a.type] || 'info';
-                
-                return `
-                    <div class="flex items-start space-x-3 p-3 ${typeClass} rounded-lg hover-lift">
-                        <div class="flex-shrink-0 h-8 w-8 flex-items-center justify-center bg-${a.type}-100 text-${a.type}-800 rounded-full text-xs">
-                            <i class="material-icons">${icon}</i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">${a.msg}</p>
-                            <p class="mt-1 text-xs text-gray-500">${a.time}</p>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function updateOpdSchedule() {
-            elements.opdSchedule.innerHTML = opdSchedule.map(s => `
-                <tr class="hover:bg-gray-50 transition-colors hover-lift">
-                    <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${s.time}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">${s.patient}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">${s.doctor}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">${s.dept}</td>
-                    <td>
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            ${s.status === 'Checked In' ? 'bg-blue-100 text-blue-800' :
-                              s.status === 'Waiting' ? 'bg-yellow-100 text-yellow-800' :
-                              s.status === 'In Consultation' ? 'bg-green-100 text-green-800' : 'bg-gray-100'}">
-                            ${s.status}
-                        </span>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function updateIpdStatus() {
-            // This would normally update IPD tab, but for brevity we'll just note it's simulated
-            // In a full version, this would update bed occupancy stats
-        }
-
-        function updateLastSync() {
+        // Real-time clock
+        function updateClock() {
             const now = new Date();
-            elements.lastSync.textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            document.getElementById('clock').textContent = now.toLocaleTimeString();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Simulate live data updates
+        function updateLiveData() {
+            // OT Utilization (65-85%)
+            const otUtil = Math.floor(65 + Math.random() * 20);
+            document.getElementById('ot-util').textContent = otUtil + '%';
+            document.getElementById('ot-util').parentElement.className = 'kpi-card ' + (otUtil > 75 ? 'positive' : otUtil < 65 ? 'negative' : 'neutral');
+            
+            // Spine Surgeries (0-5/day)
+            const spineSurgeries = Math.floor(Math.random() * 6);
+            document.getElementById('spine-surgeries').textContent = spineSurgeries;
+            
+            // Avg Duration (1.5-3h)
+            const hours = 1 + Math.floor(Math.random() * 2);
+            const minutes = Math.floor(Math.random() * 60);
+            document.getElementById('avg-duration').textContent = `${hours}h ${minutes.toString().padStart(2, '0')}m`;
+            
+            // Implant Accuracy (95-99.9%)
+            const implantAcc = (95 + Math.random() * 4.9).toFixed(1);
+            document.getElementById('implant-acc').textContent = implantAcc + '%';
+            
+            // DEXA Scans (0-20/day)
+            document.getElementById('dexa-scans').textContent = Math.floor(Math.random() * 21);
+            
+            // OR Turnover (15-35 min)
+            const turnover = 15 + Math.floor(Math.random() * 20);
+            document.getElementById('turnover').textContent = turnover + 'm';
+            document.getElementById('turnover').parentElement.className = 'kpi-card ' + (turnover < 20 ? 'positive' : turnover > 30 ? 'negative' : 'neutral');
+            
+            // ICU Occupancy (40-90%)
+            const icuOcc = Math.floor(40 + Math.random() * 50);
+            document.getElementById('icu-occ').textContent = icuOcc + '%';
+            document.getElementById('icu-status').textContent = `${Math.floor(icuOcc * 6 / 100)}/6 beds`;
+            document.getElementById('icu-occ').parentElement.className = 'kpi-card ' + (icuOcc > 75 ? 'negative' : icuOcc < 50 ? 'positive' : 'info');
+            
+            // Patient Satisfaction (4.0-5.0)
+            const satScore = (4.0 + Math.random() * 1.0).toFixed(1);
+            document.getElementById('sat-score').textContent = satScore + '/5';
+            
+            // Update zone statuses
+            document.getElementById('ot-status').textContent = ['OT1: IDET (Prep)', 'OT2: TLIF (Running)', 'OT3: ACDF (Recovery)', 'OT4: Sterilization', 'OT5: Ready', 'OT6: Maintenance'][Math.floor(Math.random() * 6)];
+            document.getElementById('icu-status').textContent = `${Math.floor(Math.random() * 7)}/6 Occupied`;
+            document.getElementById('radio-status').textContent = ['MRI: Idle', 'MRI: Scanning', 'CT: Scanning', 'DEXA: Ready', 'USG: Patient'][Math.floor(Math.random() * 5)];
+            document.getElementById('physio-status').textContent = `${Math.floor(Math.random() * 15)} Patients`;
+            document.getElementById('er-status').textContent = `${Math.floor(Math.random() * 5)} Waiting`;
+            document.getElementById('pharm-status').textContent = Math.random() > 0.2 ? 'Open' : 'Closing Soon';
+        }
+        setInterval(updateLiveData, 5000);
+        updateLiveData();
+
+        // Admin panel toggling
+        function toggleView(view) {
+            document.querySelectorAll('.admin-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // In real implementation, this would load different views
+            alert(`Opening ${view.charAt(0).toUpperCase() + view.slice(1)} view... (Demo)`);
         }
 
-        function updateFooterTime() {
-            const now = new Date();
-            elements.footerTime.textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            setTimeout(updateFooterTime, 1000);
-        }
-
-        // ========== LIVE UPDATES (SIMULATES REAL-TIME) ==========
-        function startLiveUpdates() {
-            // Update stats every 4-6 seconds
-            setInterval(() => {
-                updateStats();
-                updateLastSync();
-            }, 5000);
-            
-            // Update patient queue every 3-5 seconds
-            setInterval(updatePatientQueue, 4000);
-            
-            // Occasionally add new alert/lab result
-            setInterval(() => {
+        // Simulate zone activation
+        setInterval(() => {
+            const zones = document.querySelectorAll('.zone');
+            zones.forEach(zone => {
                 if (Math.random() > 0.7) {
-                    // Add a new lab result
-                    const newLab = {
-                        test: ['HbA1c', 'TSH', 'Vitamin D', 'Troponin'][Math.floor(Math.random()*4)],
-                        patient: patients[Math.floor(Math.random()*patients.length)].name,
-                        result: `${Math.floor(Math.random()*10)+5}.${Math.floor(Math.random()*9)} ${['%', 'mIU/mL', 'ng/mL', 'ng/L'][Math.floor(Math.random()*4)]} ${Math.random() > 0.5 ? '✓ Normal' : '⚠ Abnormal'}`,
-                        time: 'just now'
-                    };
-                    labResults.unshift(newLab);
-                    if (labResults.length > 4) labResults.pop();
-                    updateLabResults();
+                    zone.classList.add('active');
+                    setTimeout(() => zone.classList.remove('active'), 3000);
                 }
-                
-                if (Math.random() > 0.8) {
-                    // Add a new alert
-                    const newAlert = {
-                        type: ['warning', 'info', 'success'][Math.floor(Math.random()*3)],
-                        msg: ['New patient admission', 'Lab results ready', 'Medication dispensed', 'Equipment maintenance due'][Math.floor(Math.random()*4)],
-                        time: 'just now'
-                    };
-                    alerts.unshift(newAlert);
-                    if (alerts.length > 4) alerts.pop();
-                    updateSystemAlerts();
-                }
-            }, 7000);
-        }
-
-        // ========== EVENT LISTENERS ==========
-        function setupEventListeners() {
-            // Login form
-            elements.loginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                handleLogin();
             });
-            
-            elements.verifyOtpBtn.addEventListener('click', verifyOtp);
-            
-            // Role buttons
-            Object.keys(elements.roleButtons).forEach(role => {
-                elements.roleButtons[role].addEventListener('click', () => setRole(role.charAt(0).toUpperCase() + role.slice(1)));
-            });
-            
-            // Tab buttons
-            Object.keys(elements.tabButtons).forEach(tab => {
-                elements.tabButtons[tab].addEventListener('click', () => setTab(tab));
-            });
-            
-            // Settings button
-            elements.settingsBtn.addEventListener('click', openSettingsModal);
-            
-            // Settings modal
-            elements.closeSettingsModal.addEventListener('click', closeSettingsModal);
-            elements.modalCancelBtn.addEventListener('click', closeSettingsModal);
-            
-            elements.modalSaveBtn.addEventListener('click', () => {
-                hospitalName = elements.modalHospitalName.value.trim() || "Your Hospital Name";
-                hospitalTagline = elements.modalTagline.value.trim() || "Advanced Medical Management System";
-                hospitalLogoUrl = elements.modalLogoUrl.value.trim() || "https://via.placeholder.com/150x50/2563eb/ffffff?text=Hospital+Logo";
-                
-                saveSettings();
-                updateHospitalBranding();
-                closeSettingsModal();
-            });
-            
-            // Settings tab (alternative way to change settings)
-            elements.saveSettingsBtn.addEventListener('click', () => {
-                hospitalName = elements.hospitalNameInput.value.trim() || "Your Hospital Name";
-                hospitalTagline = elements.taglineInput.value.trim() || "Advanced Medical Management System";
-                hospitalLogoUrl = elements.logoUrlInput.value.trim() || "https://via.placeholder.com/150x50/2563eb/ffffff?text=Hospital+Logo";
-                
-                saveSettings();
-                updateHospitalBranding();
-                // Stay in settings tab to confirm changes
-            });
-            
-            elements.cancelSettingsBtn.addEventListener('click', () => {
-                // Reload saved settings to discard changes
-                loadSettings();
-                updateHospitalBranding();
-            });
-            
-            // Logout button
-            elements.logoutBtn.addEventListener('click', () => {
-                // Clear any sensitive data (in real app: Supabase signOut)
-                showLoginPage();
-            });
-        }
-
-        // ========== INITIALIZE ==========
-        init();
-        showLoginPage(); // Start with login screen
+        }, 4000);
     </script>
 </body>
 </html>
