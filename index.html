@@ -1,1 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apex Hospital Management System - Live Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        .status-online { background: var(--success); }
+        .status-warning { background: var(--warning); }
+        .status-offline { background: var(--danger); }
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .tab-active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="h-10 w-10 flex items-center justify-center bg-indigo-600 text-white rounded-lg">
+                    <i class="material-icons text-2xl">local_hospital</i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold text-gray-900">Apex Hospital Management System</h1>
+                    <p class="text-sm text-gray-500">Live System Preview</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <div class="absolute inset-0 animate-pulse bg-indigo-600 opacity-25 rounded-full"></div>
+                    <button id="logout-btn" class="relative flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 hover-lift">
+                        <span class="mr-2">Logout</span>
+                        <i class="material-icons">logout</i>
+                    </button>
+                </div>
+                <div class="status-badge status-online flex items-center">
+                    <div class="status-dot status-online"></div>
+                    <span>System Online • Last sync: <span id="last-sync">just now</span></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <!-- Role Selector (Simulates RBAC) -->
+            <div class="mb-6">
+                <div class="flex items-center space-x-4 bg-white p-4 rounded-lg shadow-sm hover-lift">
+                    <div class="flex-shrink-0">
+                        <div class="h-10 w-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg">
+                            <i class="material-icons">account_circle</i>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Current Role:</p>
+                        <p class="text-lg font-semibold text-gray-900" id="current-role">Doctor (Orthopedics)</p>
+                    </div>
+                    <div class="ml-auto flex space-x-3">
+                        <button class="px-3 py-1 text-xs font-medium bg-gray-100 rounded-full hover:bg-gray-200" id="role-doctor">Doctor</button>
+                        <button class="px-3 py-1 text-xs font-medium bg-gray-100 rounded-full hover:bg-gray-200" id="role-nurse">Nurse</button>
+                        <button class="px-3 py-1 text-xs font-medium bg-gray-100 rounded-full hover:bg-gray-200" id="role-admin">Admin</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabbed Interface -->
+            <div class="mb-6">
+                <div class="flex border-b border-gray-200">
+                    <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover-lift tab-active" id="tab-dashboard">Dashboard</button>
+                    <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover-lift" id="tab-opd">OPD</button>
+                    <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover-lift" id="tab-ipd">IPD</button>
+                    <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover-lift" id="tab-pharmacy">Pharmacy</button>
+                    <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover-lift" id="tab-billing">Billing</button>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tab-content" class="space-y-6">
+                <!-- Dashboard Tab (Default) -->
+                <div id="dashboard-tab" class="tab-pane active">
+                    <!-- Live Stats -->
+                    <div class="grid gap-4 mb-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+                        <div class="glass p-4 rounded-lg hover-lift">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="h-8 w-8 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg">
+                                        <i class="material-icons">hospital</i>
+                                    </div>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-xs font-medium text-gray-500">Active Patients</p>
+                                    <p class="mt-1 text-2xl font-bold text-gray-900" id="patient-count">142</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass p-4 rounded-lg hover-lift">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="h-8 w-8 flex items-center justify-center bg-green-100 text-green-600 rounded-lg">
+                                        <i class="material-icons">local_hospital</i>
+                                    </div>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-xs font-medium text-gray-500">Today's Admissions</p>
+                                    <p class="mt-1 text-2xl font-bold text-gray-900" id="today-admissions">22</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass p-4 rounded-lg hover-lift">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="h-8 w-8 flex items-center justify-center bg-purple-100 text-purple-600 rounded-lg">
+                                        <i class="material-icons">schedule</i>
+                                    </div>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-xs font-medium text-gray-500">OR Utilization</p>
+                                    <p class="mt-1 text-2xl font-bold text-gray-900" id="or-utilization">85%</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass p-4 rounded-lg hover-lift">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="h-8 w-8 flex items-center justify-center bg-amber-100 text-amber-600 rounded-lg">
+                                        <i class="material-icons">attach_money</i>
+                                    </div>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-xs font-medium text-gray-500">Daily Revenue</p>
+                                    <p class="mt-1 text-2xl font-bold text-gray-900" id="daily-revenue">$18,750</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patient Queue -->
+                    <section class="glass rounded-lg shadow-sm p-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <h2 class="text-xl font-semibold text-gray-900">Patient Queue</h2>
+                            <div class="flex items-center space-x-2">
+                                <div class="h-2 w-2 bg-green-500 rounded-full status-dot status-online"></div>
+                                <span class="text-xs text-gray-500">Live Updates</span>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                        <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                        <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                                        <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dept</th>
+                                        <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th scope="col" class="relative px-3 py-2">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200" id="patient-queue">
+                                    <!-- Will be populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- Recent Activity -->
+                    <section class="grid gap-4 mb-6 grid-cols-1 lg:grid-cols-2">
+                        <!-- Lab Results -->
+                        <section class="glass rounded-lg shadow-sm p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <h2 class="text-xl font-semibold text-gray-900">Recent Lab Results</h2>
+                                <button class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">View All</button>
+                            </div>
+                            <div class="space-y-3" id="lab-results">
+                                <!-- Populated by JS -->
+                            </div>
+                        </section>
+
+                        <!-- System Alerts -->
+                        <section class="glass rounded-lg shadow-sm p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <h2 class="text-xl font-semibold text-gray-900">System Alerts</h2>
+                                <button class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">View All</button>
+                            </div>
+                            <div class="space-y-3" id="system-alerts">
+                                <!-- Populated by JS -->
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- OPD Tab -->
+                <div id="opd-tab" class="tab-pane hidden">
+                    <section class="glass rounded-lg shadow-sm p-4">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">OPD Schedule</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                        <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                                        <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
+                                        <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dept</th>
+                                        <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200" id="opd-schedule">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Pharmacy Tab -->
+                <div id="pharmacy-tab" class="tab-pane hidden">
+                    <section class="glass rounded-lg shadow-sm p-4 mb-4">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Medication Dispensing</h2>
+                        <div class="space-y-4">
+                            <div class="flex items-start space-x-4">
+                                <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-green-100 text-green-600 rounded-lg">
+                                    <i class="material-icons">local_pharmacy</i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Dispensed: Amoxicillin 500mg</h3>
+                                    <p class="mt-1 text-sm text-gray-500">Patient: John Smith (PAT-2024-001)</p>
+                                    <p class="mt-1 text-sm font-medium">Qty: 10 capsules • RX: RX-2024-089</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-4">
+                                <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-yellow-100 text-yellow-600 rounded-lg">
+                                    <i class="material-icons">warning</i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Alert: Low Stock</h3>
+                                    <p class="mt-1 text-sm text-gray-500">Item: Insulin Aspart (100U/mL)</p>
+                                    <p class="mt-1 text-sm font-medium text-red-600">Stock: 5 vials (Min: 10)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Billing Tab -->
+                <div id="billing-tab" class="tab-pane hidden">
+                    <section class="glass rounded-lg shadow-sm p-4">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Today's Billing Summary</h2>
+                        <div class="grid gap-4 grid-cols-1 md:grid-cols-2">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Total Claims Processed</p>
+                                <p class="text-2xl font-bold text-gray-900">47</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Average Claim Value</p>
+                                <p class="text-2xl font-bold text-gray-900">$320</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Insurance Approval Rate</p>
+                                <p class="text-2xl font-bold text-gray-900">92%</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Pending Payments</p>
+                                <p class="text-2xl font-bold text-gray-900">$8,450</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+            Apex Hospital Management System • <span id="footer-time">Loading...</span> • Simulated Data for Preview
+        </div>
+    </footer>
+
+    <script>
+        // ========== STATE MANAGEMENT ==========
+        let currentRole = 'Doctor';
+        let currentTab = 'dashboard';
+        const roles = ['Doctor', 'Nurse', 'Admin'];
+        
+        // Sample data pools
+        const patients = [
+            { id: 'PAT-2024-001', name: 'John Smith', age: 45, dept: 'Cardiology', status: 'In Consultation', statusClass: 'bg-green-100 text-green-800' },
+            { id: 'PAT-2024-002', name: 'Maria Garcia', age: 32, dept: 'Emergency', status: 'Critical', statusClass: 'bg-red-100 text-red-800' },
+            { id: 'PAT-2024-003', name: 'Robert Chen', age: 67, dept: 'Orthopedics', status: 'Waiting', statusClass: 'bg-yellow-100 text-yellow-800' },
+            { id: 'PAT-2024-004', name: 'Lisa Wang', age: 28, dept: 'Pediatrics', status: 'In Consultation', statusClass: 'bg-green-100 text-green-800' },
+            { id: 'PAT-2024-005', name: 'James Wilson', age: 55, dept: 'Oncology', status: 'Pre-Op', statusClass: 'bg-blue-100 text-blue-800' },
+            { id: 'PAT-2024-006', name: 'Sarah Khan', age: 41, dept: 'Radiology', status: 'Scan Complete', statusClass: 'bg-indigo-100 text-indigo-800' },
+            { id: 'PAT-2024-007', name: 'David Lee', age: 39, dept: 'Physiotherapy', status: 'In Session', statusClass: 'bg-purple-100 text-purple-800' }
+        ];
+
+        const labResults = [
+            { test: 'Blood Glucose', patient: 'John Smith', result: '110 mg/dL ✓ Normal', time: '2 min ago' },
+            { test: 'Lipid Panel', patient: 'Maria Garcia', result: 'LDL: 160 mg/dL ⚠ High', time: '5 min ago' },
+            { test: 'CBC', patient: 'Robert Chen', result: 'WBC: 8.2 ◯ Normal', time: '8 min ago' },
+            { test: 'CRP', patient: 'Lisa Wang', result: '0.8 mg/L ✓ Normal', time: '12 min ago' }
+        ];
+
+        const alerts = [
+            { type: 'warning', msg: 'OR-3 Maintenance Required in 2h', time: '10 min ago' },
+            { type: 'info', msg: '3 New Patient Registrations', time: '15 min ago' },
+            { type: 'success', msg: 'Daily Backup Completed', time: '20 min ago' },
+            { type: 'warning', msg: 'Low Stock: Insulin Cartridges', time: '25 min ago' }
+        ];
+
+        const opdSchedule = [
+            { time: '09:00', patient: 'John Smith', doctor: 'Dr. Sharma', dept: 'Orthopedics', status: 'Checked In' },
+            { time: '09:30', patient: 'Maria Garcia', doctor: 'Dr. Patel', dept: 'Emergency', status: 'Waiting' },
+            { time: '10:00', patient: 'Robert Chen', doctor: 'Dr. Sharma', dept: 'Orthopedics', status: 'In Consultation' },
+            { time: '10:30', patient: 'Lisa Wang', doctor: 'Dr. Gupta', dept: 'Pediatrics', status: 'Checked In' }
+        ];
+
+        // ========== DOM ELEMENTS ==========
+        const elements = {
+            patientCount: document.getElementById('patient-count'),
+            todayAdmissions: document.getElementById('today-admissions'),
+            orUtilization: document.getElementById('or-utilization'),
+            dailyRevenue: document.getElementById('daily-revenue'),
+            patientQueue: document.getElementById('patient-queue'),
+            labResults: document.getElementById('lab-results'),
+            systemAlerts: document.getElementById('system-alerts'),
+            opdSchedule: document.getElementById('opd-schedule'),
+            lastSync: document.getElementById('last-sync'),
+            currentRole: document.getElementById('current-role'),
+            footerTime: document.getElementById('footer-time'),
+            roleButtons: {
+                doctor: document.getElementById('role-doctor'),
+                nurse: document.getElementById('role-nurse'),
+                admin: document.getElementById('role-admin')
+            },
+            tabButtons: {
+                dashboard: document.getElementById('tab-dashboard'),
+                opd: document.getElementById('tab-opd'),
+                ipd: document.getElementById('tab-ipd'),
+                pharmacy: document.getElementById('tab-pharmacy'),
+                billing: document.getElementById('tab-billing')
+            },
+            tabPanes: {
+                dashboard: document.getElementById('dashboard-tab'),
+                opd: document.getElementById('opd-tab'),
+                ipd: document.getElementById('ipd-tab'),
+                pharmacy: document.getElementById('pharmacy-tab'),
+                billing: document.getElementById('billing-tab')
+            }
+        };
+
+        // ========== INITIALIZATION ==========
+        function init() {
+            setRole('Doctor');
+            setTab('dashboard');
+            updateAllData();
+            startLiveUpdates();
+            setupEventListeners();
+            updateFooterTime();
+        }
+
+        // ========== ROLE MANAGEMENT (RBAC SIMULATION) ==========
+        function setRole(role) {
+            currentRole = role;
+            elements.currentRole.textContent = `${role} (${getRoleSpecialty(role)})`;
+            
+            // Update button states
+            Object.values(elements.roleButtons).forEach(btn => btn.classList.remove('bg-primary-600', 'text-white'));
+            elements.roleButtons[role.toLowerCase()].classList.add('bg-primary-600', 'text-white');
+            
+            // Update tab visibility based on role
+            updateTabVisibility();
+        }
+
+        function getRoleSpecialty(role) {
+            const specialties = {
+                Doctor: 'Orthopedics',
+                Nurse: 'Floor Supervisor',
+                Admin: 'System Administrator'
+            };
+            return specialties[role] || '';
+        }
+
+        // ========== TAB MANAGEMENT ==========
+        function setTab(tab) {
+            currentTab = tab;
+            
+            // Update button states
+            Object.values(elements.tabButtons).forEach(btn => btn.classList.remove('tab-active'));
+            elements.tabButtons[tab].classList.add('tab-active');
+            
+            // Show/hide panes
+            Object.values(elements.tabPanes).forEach(pane => pane.classList.add('hidden'));
+            elements.tabPanes[tab].classList.remove('hidden');
+        }
+
+        function updateTabVisibility() {
+            // Hide certain tabs based on role (RBAC simulation)
+            if (currentRole === 'Nurse') {
+                elements.tabButtons.pharmacy.parentElement.classList.add('hidden');
+                elements.tabButtons.billing.parentElement.classList.add('hidden');
+            } else {
+                elements.tabButtons.pharmacy.parentElement.classList.remove('hidden');
+                elements.tabButtons.billing.parentElement.classList.remove('hidden');
+            }
+            
+            // If current tab is hidden, switch to dashboard
+            if (elements.tabButtons[currentTab].parentElement.classList.contains('hidden')) {
+                setTab('dashboard');
+            }
+        }
+
+        // ========== DATA UPDATES ==========
+        function updateAllData() {
+            updateStats();
+            updatePatientQueue();
+            updateLabResults();
+            updateSystemAlerts();
+            updateOpdSchedule();
+            updateLastSync();
+        }
+
+        function updateStats() {
+            // Simulate fluctuating data
+            elements.patientCount.textContent = Math.floor(Math.random() * 25) + 130;
+            elements.todayAdmissions.textContent = Math.floor(Math.random() * 12) + 18;
+            elements.orUtilization.textContent = Math.floor(Math.random() * 25) + 70 + '%';
+            elements.dailyRevenue.textContent = '$' + (Math.floor(Math.random() * 8000) + 12000).toLocaleString();
+        }
+
+        function updatePatientQueue() {
+            // Shuffle and sample patients for variety
+            const shuffled = [...patients].sort(() => 0.5 - Math.random());
+            const sample = shuffled.slice(0, Math.floor(Math.random() * 4) + 3);
+            
+            elements.patientQueue.innerHTML = sample.map(p => `
+                <tr class="hover:bg-gray-50 transition-colors hover-lift">
+                    <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${p.id}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">${p.name}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">${p.age}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">${p.dept}</td>
+                    <td>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${p.statusClass}">
+                            ${p.status}
+                        </span>
+                    </td>
+                    <td class="relative px-3 py-2">
+                        <button class="text-indigo-600 hover:text-indigo-900 px-2 py-1 rounded-md text-sm font-medium hover:bg-indigo-50 hover-lift">
+                            View
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateLabResults() {
+            elements.labResults.innerHTML = labResults.map(r => `
+                <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover-lift">
+                    <div class="flex-shrink-0 h-8 w-8 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg text-sm">
+                        <i class="material-icons">science</i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-900">${r.test}</h3>
+                        <p class="mt-1 text-sm text-gray-500">Patient: ${r.patient}</p>
+                        <p class="mt-1 text-sm font-medium">${r.result}</p>
+                        <p class="mt-1 text-xs text-gray-500">${r.time}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateSystemAlerts() {
+            elements.systemAlerts.innerHTML = alerts.map(a => {
+                const typeClass = {
+                    warning: 'bg-yellow-50 border-l-4 border-yellow-400',
+                    info: 'bg-blue-50 border-l-4 border-blue-400',
+                    success: 'bg-green-50 border-l-4 border-green-400'
+                }[a.type] || 'bg-gray-50';
+                
+                const iconClass = {
+                    warning: 'text-yellow-800',
+                    info: 'text-blue-800',
+                    success: 'text-green-800'
+                }[a.type] || 'text-gray-800';
+                
+                const icon = {
+                    warning: 'warning',
+                    info: 'notifications',
+                    success: 'check_circle'
+                }[a.type] || 'info';
+                
+                return `
+                    <div class="flex items-start space-x-3 p-3 ${typeClass} rounded-lg hover-lift">
+                        <div class="flex-shrink-0 h-8 w-8 flex items-center justify-center bg-${a.type}-100 text-${a.type}-800 rounded-full text-xs">
+                            <i class="material-icons">${icon}</i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">${a.msg}</p>
+                            <p class="mt-1 text-xs text-gray-500">${a.time}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateOpdSchedule() {
+            elements.opdSchedule.innerHTML = opdSchedule.map(s => `
+                <tr class="hover:bg-gray-50 transition-colors hover-lift">
+                    <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${s.time}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">${s.patient}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">${s.doctor}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">${s.dept}</td>
+                    <td>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            ${s.status === 'Checked In' ? 'bg-blue-100 text-blue-800' :
+                              s.status === 'Waiting' ? 'bg-yellow-100 text-yellow-800' :
+                              s.status === 'In Consultation' ? 'bg-green-100 text-green-800' : 'bg-gray-100'}">
+                            ${s.status}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateLastSync() {
+            const now = new Date();
+            elements.lastSync.textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        function updateFooterTime() {
+            const now = new Date();
+            elements.footerTime.textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            setTimeout(updateFooterTime, 1000);
+        }
+
+        // ========== LIVE UPDATES (SIMULATES REAL-TIME) ==========
+        function startLiveUpdates() {
+            // Update stats every 4-6 seconds
+            setInterval(() => {
+                updateStats();
+                updateLastSync();
+            }, 5000);
+            
+            // Update patient queue every 3-5 seconds
+            setInterval(updatePatientQueue, 4000);
+            
+            // Occasionally add new alert/lab result
+            setInterval(() => {
+                if (Math.random() > 0.7) {
+                    // Add a new lab result
+                    const newLab = {
+                        test: ['HbA1c', 'TSH', 'Vitamin D', 'Troponin'][Math.floor(Math.random()*4)],
+                        patient: patients[Math.floor(Math.random()*patients.length)].name,
+                        result: `${Math.floor(Math.random()*10)+5}.${Math.floor(Math.random()*9)} ${['%', 'mIU/mL', 'ng/mL', 'ng/L'][Math.floor(Math.random()*4)]} ${Math.random() > 0.5 ? '✓ Normal' : '⚠ Abnormal'}`,
+                        time: 'just now'
+                    };
+                    labResults.unshift(newLab);
+                    if (labResults.length > 4) labResults.pop();
+                    updateLabResults();
+                }
+                
+                if (Math.random() > 0.8) {
+                    // Add a new alert
+                    const newAlert = {
+                        type: ['warning', 'info', 'success'][Math.floor(Math.random()*3)],
+                        msg: ['New patient admission', 'Lab results ready', 'Medication dispensed', 'Equipment maintenance due'][Math.floor(Math.random()*4)],
+                        time: 'just now'
+                    };
+                    alerts.unshift(newAlert);
+                    if (alerts.length > 4) alerts.pop();
+                    updateSystemAlerts();
+                }
+            }, 7000);
+        }
+
+        // ========== EVENT LISTENERS ==========
+        function setupEventListeners() {
+            // Role buttons
+            Object.keys(elements.roleButtons).forEach(role => {
+                elements.roleButtons[role].addEventListener('click', () => setRole(role.charAt(0).toUpperCase() + role.slice(1)));
+            });
+            
+            // Tab buttons
+            Object.keys(elements.tabButtons).forEach(tab => {
+                elements.tabButtons[tab].addEventListener('click', () => setTab(tab));
+            });
+            
+            // Logout button
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                alert('Logging out... (simulated)');
+                setRole('Doctor'); // Reset to default role on logout
+            });
+        }
+
+        // ========== INITIALIZE ==========
+        init();
+    </script>
+</body>
+</html>
 
